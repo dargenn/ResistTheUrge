@@ -2,6 +2,7 @@ var mainState = {
     preload: function() {
         game.load.image('bird', 'assets/bird.png');
         game.load.image('pipe', 'assets/pipe.png');
+        game.load.audio('jump', 'assets/jump.wav');
     },
 
     create: function() {
@@ -33,6 +34,11 @@ var mainState = {
         this.score = 0;
         this.labelScore = game.add.text(20, 20, "0",
             { font: "30px Arial", fill: "#ffffff" });
+
+        // Move the anchor to the left and downward
+        this.bird.anchor.setTo(-0.2, 0.5);
+
+        this.jumpSound = game.add.audio('jump');
     },
 
     update: function() {
@@ -41,12 +47,34 @@ var mainState = {
             this.restartGame();
 
         // Restart, gdy wykryje kolizje
-        game.physics.arcade.overlap(this.bird, this.pipes, this.restartGame, null, this);
+        game.physics.arcade.overlap(this.bird, this.pipes, this.hitPipe, null, this);
+
+        // Przy spadaniu obrot jest do dolu
+        if (this.bird.angle < 20)
+            this.bird.angle += 1;
+
+
     },
 
     jump: function() {
+        // Przy skoku puszczaj dzwiek
+        this.jumpSound.play();
+
+        // Nie moze skakac jesli jest martwy
+        if (this.bird.alive == false)
+            return;
+
         // Jak wysoko ma skakac
         this.bird.body.velocity.y = -350;
+
+        // Animacja
+        var animation = game.add.tween(this.bird);
+
+        // 100ms na powrot do poprzedniego katu
+        animation.to({angle: -20}, 100);
+
+        // And start the animation
+        animation.start();
     },
 
     restartGame: function() {
@@ -78,6 +106,23 @@ var mainState = {
         // Zinkrementuj wynik
         this.score++;
         this.labelScore.text = this.score;
+    },
+
+    hitPipe: function() {
+        // Nie rob nic jezeli juz uderzyl
+        if (this.bird.alive == false)
+            return;
+
+        // Zywy - false
+        this.bird.alive = false;
+
+        // Rury sie nie pojawiaja juz wiecej
+        game.time.events.remove(this.timer);
+
+        // Zatrzymanie ruchu rur
+        this.pipes.forEach(function(p){
+            p.body.velocity.x = 0;
+        }, this);
     }
 };
 
