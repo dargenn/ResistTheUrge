@@ -64,9 +64,9 @@ var mainState = {
             // When the paus button is pressed, we pause the game
             game.paused = true;
 
-            var choiseLabel = game.add.text(width / 2, width - 150, 'Click anywhere to continue',
+            choiceLabel = game.add.text(width / 2, width - 150, 'Click anywhere to continue',
                 { font: '30px Arial', fill: '#fff' });
-            choiseLabel.anchor.setTo(0.5, 0.5);
+            choiceLabel.anchor.setTo(0.5, 0.5);
             pauseLabel.visible = false;
         });
 
@@ -74,7 +74,7 @@ var mainState = {
 
         function unpause(event) {
             if (game.paused) {
-                choiseLabel.destroy();
+                choiceLabel.destroy();
                 game.paused = false;
                 pauseLabel.visible = true;
             }
