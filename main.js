@@ -1,7 +1,12 @@
+var width = 400;
+var height = 490;
+
 var mainState = {
     preload: function() {
         game.load.image('bird', 'assets/bird.png');
         game.load.image('pipe', 'assets/pipe.png');
+        game.load.image('computer', 'assets/computer.png');
+        game.load.image('notebook', 'assets/notebook.png');
         game.load.audio('jump', 'assets/jump.wav');
     },
 
@@ -26,19 +31,54 @@ var mainState = {
 
         // Pusta grupa rur
         this.pipes = game.add.group();
+        this.computers = game.add.group();
+        this.notebooks = game.add.group();
 
         // Ruch rur
         this.timer = game.time.events.loop(1500, this.addRowOfPipes, this);
+        this.computerTimer = game.time.events.loop(3500, this.addComputer, this);
+        this.notebookTimer = game.time.events.loop(2500, this.addNotebook, this);
 
         // Wyswietlanie wyniku
         this.score = 0;
         this.labelScore = game.add.text(20, 20, "0",
             { font: "30px Arial", fill: "#ffffff" });
 
+        this.computerScore = 0;
+        this.computerScoreLabel = game.add.text(20, 60, "0",
+            { font: "30px Arial", fill: "#e8e242"});
+
+        this.notebookScore = 0;
+        this.notebookScoreLabel = game.add.text(20, 100, "0",
+            { font: "30px Arial", fill: "#4de526"});
+
         // Move the anchor to the left and downward
         this.bird.anchor.setTo(-0.2, 0.5);
 
         this.jumpSound = game.add.audio('jump');
+
+        // Create a label to use as a button
+        var pauseLabel = game.add.text(300, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
+        pauseLabel.inputEnabled = true;
+        pauseLabel.events.onInputUp.add(function () {
+            // When the paus button is pressed, we pause the game
+            game.paused = true;
+
+            var choiseLabel = game.add.text(width / 2, width - 150, 'Click anywhere to continue',
+                { font: '30px Arial', fill: '#fff' });
+            choiseLabel.anchor.setTo(0.5, 0.5);
+            pauseLabel.visible = false;
+        });
+
+        game.input.onDown.add(unpause, self);
+
+        function unpause(event) {
+            if (game.paused) {
+                choiseLabel.destroy();
+                game.paused = false;
+                pauseLabel.visible = true;
+            }
+        }
     },
 
     update: function() {
@@ -48,12 +88,12 @@ var mainState = {
 
         // Restart, gdy wykryje kolizje
         game.physics.arcade.overlap(this.bird, this.pipes, this.hitPipe, null, this);
+        game.physics.arcade.overlap(this.bird, this.computers, this.hitComputer, null, this);
+        game.physics.arcade.overlap(this.bird, this.notebooks, this.hitNotebook, null, this);
 
         // Przy spadaniu obrot jest do dolu
         if (this.bird.angle < 20)
             this.bird.angle += 1;
-
-
     },
 
     jump: function() {
@@ -108,6 +148,26 @@ var mainState = {
         this.labelScore.text = this.score;
     },
 
+    addComputer: function () {
+        var computer = game.add.sprite(Math.random() * 400, Math.random() * 400, 'computer');
+        this.computers.add(computer);
+        game.physics.arcade.enable(computer);
+
+        computer.body.velocity.x = -200;
+        computer.checkWorldBounds = true;
+        computer.outOfBoundsKill = true;
+    },
+
+    addNotebook: function () {
+        var notebook = game.add.sprite(Math.random() * 400, Math.random() * 400, 'notebook');
+        this.notebooks.add(notebook);
+        game.physics.arcade.enable(notebook);
+
+        notebook.body.velocity.x = -200;
+        notebook.checkWorldBounds = true;
+        notebook.outOfBoundsKill = true;
+    },
+
     hitPipe: function() {
         // Nie rob nic jezeli juz uderzyl
         if (this.bird.alive == false)
@@ -118,16 +178,44 @@ var mainState = {
 
         // Rury sie nie pojawiaja juz wiecej
         game.time.events.remove(this.timer);
+        game.time.events.remove(this.computerTimer);
+        game.time.events.remove(this.notebookTimer);
 
         // Zatrzymanie ruchu rur
         this.pipes.forEach(function(p){
             p.body.velocity.x = 0;
         }, this);
+
+        this.computers.forEach(function (p) {
+            p.body.velocity.x = 0;
+        }, this);
+
+        this.notebooks.forEach(function (p) {
+            p.body.velocity.x = 0;
+        }, this);
+    },
+    
+    hitComputer: function () {
+        this.computers.destroy();
+        this.computers = game.add.group();
+        this.bird.body.gravity.y -= 100;
+
+        this.computerScore++;
+        this.computerScoreLabel.text = this.computerScore;
+    },
+
+    hitNotebook: function () {
+        this.notebooks.destroy();
+        this.notebooks = game.add.group();
+        this.bird.body.gravity.y += 100;
+
+        this.notebookScore++;
+        this.notebookScoreLabel.text = this.notebookScore;
     }
 };
 
 //Init
-var game = new Phaser.Game(400, 490);
+var game = new Phaser.Game(width, height);
 
 game.state.add('main', mainState);
 game.state.start('main');
