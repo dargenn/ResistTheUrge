@@ -1,8 +1,9 @@
 var width = 400;
 var height = 490;
+var highestScore = 0;
 
 var mainState = {
-    preload: function() {
+    preload: function () {
         game.load.image('bird', 'assets/bird.png');
         game.load.image('pipe', 'assets/pipe.png');
         game.load.image('computer', 'assets/computer.png');
@@ -10,7 +11,7 @@ var mainState = {
         game.load.audio('jump', 'assets/jump.wav');
     },
 
-    create: function() {
+    create: function () {
         // Kolor tła - mozna zmienic na fajniejszy
         game.stage.backgroundColor = '#71c5cf';
 
@@ -42,15 +43,20 @@ var mainState = {
         // Wyswietlanie wyniku
         this.score = 0;
         this.labelScore = game.add.text(20, 20, "0",
-            { font: "30px Arial", fill: "#ffffff" });
+            {font: "30px Arial", fill: "#ffffff"});
 
         this.computerScore = 0;
         this.computerScoreLabel = game.add.text(20, 60, "0",
-            { font: "30px Arial", fill: "#e8e242"});
+            {font: "30px Arial", fill: "#e8e242"});
 
         this.notebookScore = 0;
         this.notebookScoreLabel = game.add.text(20, 100, "0",
-            { font: "30px Arial", fill: "#4de526"});
+            {font: "30px Arial", fill: "#4de526"});
+
+        this.highScoreLabel = this.game.add.text(20, 450, ("highScore" in localStorage ? "Highest score: " + localStorage.getItem("highScore") : "Highest score: 0"), {
+            font: "20px Arial",
+            fill: "#ffffff"
+        });
 
         // Move the anchor to the left and downward
         this.bird.anchor.setTo(-0.2, 0.5);
@@ -58,14 +64,14 @@ var mainState = {
         this.jumpSound = game.add.audio('jump');
 
         // Create a label to use as a button
-        var pauseLabel = game.add.text(300, 20, 'Pause', { font: '24px Arial', fill: '#fff' });
+        var pauseLabel = game.add.text(300, 20, 'Pause', {font: '24px Arial', fill: '#fff'});
         pauseLabel.inputEnabled = true;
         pauseLabel.events.onInputUp.add(function () {
             // When the paus button is pressed, we pause the game
             game.paused = true;
 
             choiceLabel = game.add.text(width / 2, width - 150, 'Click anywhere to continue',
-                { font: '30px Arial', fill: '#fff' });
+                {font: '30px Arial', fill: '#fff'});
             choiceLabel.anchor.setTo(0.5, 0.5);
             pauseLabel.visible = false;
         });
@@ -81,10 +87,11 @@ var mainState = {
         }
     },
 
-    update: function() {
+    update: function () {
         // Restart gdy bedzie za wysoko lub za nisko
-        if (this.bird.y < 0 || this.bird.y > 490)
+        if (this.bird.y < 0 || this.bird.y > 490) {
             this.restartGame();
+        }
 
         // Restart, gdy wykryje kolizje
         game.physics.arcade.overlap(this.bird, this.pipes, this.hitPipe, null, this);
@@ -96,7 +103,7 @@ var mainState = {
             this.bird.angle += 1;
     },
 
-    jump: function() {
+    jump: function () {
         // Przy skoku puszczaj dzwiek
         this.jumpSound.play();
 
@@ -117,11 +124,15 @@ var mainState = {
         animation.start();
     },
 
-    restartGame: function() {
+    restartGame: function () {
+        if(this.score > localStorage.getItem("highScore") ){
+            localStorage.setItem("highScore", this.score);
+            this.highScoreLabel.text = "Highest score: " + localStorage.getItem("highScore");
+        }
         game.state.start('main');
     },
 
-    addOnePipe: function(x, y) {
+    addOnePipe: function (x, y) {
         var pipe = game.add.sprite(x, y, 'pipe');
         this.pipes.add(pipe);
         game.physics.arcade.enable(pipe);
@@ -134,7 +145,7 @@ var mainState = {
         pipe.outOfBoundsKill = true;
     },
 
-    addRowOfPipes: function() {
+    addRowOfPipes: function () {
         // Randomowa pozycja dziury w rurach - trzeba miec ktoredy przeleciec
         var hole = Math.floor(Math.random() * 5) + 1;
 
@@ -168,7 +179,7 @@ var mainState = {
         notebook.outOfBoundsKill = true;
     },
 
-    hitPipe: function() {
+    hitPipe: function () {
         // Nie rob nic jezeli juz uderzyl
         if (this.bird.alive == false)
             return;
@@ -182,7 +193,7 @@ var mainState = {
         game.time.events.remove(this.notebookTimer);
 
         // Zatrzymanie ruchu rur
-        this.pipes.forEach(function(p){
+        this.pipes.forEach(function (p) {
             p.body.velocity.x = 0;
         }, this);
 
@@ -194,7 +205,7 @@ var mainState = {
             p.body.velocity.x = 0;
         }, this);
     },
-    
+
     hitComputer: function () {
         this.computers.destroy();
         this.computers = game.add.group();
